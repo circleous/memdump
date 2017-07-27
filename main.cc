@@ -78,7 +78,7 @@ void parse_maps(const int pid, std::vector<maps_lines> &maps)
 		if (!parse.valid)
 			fprintf(stderr, "memdump: Error parsing line in /proc/%d/maps\n", pid);
 
-		if (!parse.inode)
+		if (!parse.inode || parse.valid)
 			maps.push_back(parse);
 	}
 
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 	}
 
 	InputParser input(argc, argv);
-	if (input.cmdOptionExists("-h")) {
+	if (input.cmdOptionExists("-h") || input.cmdOptionExists("--help")) {
 		print_usage(argv[0]);
 		return 0;
 	}
@@ -124,6 +124,7 @@ int main(int argc, char* argv[])
 		fprintf(stdout, "Select Region: ");
 		// TODO: Handle when input select out of list. High priority.
 		scanf("%zu", &region);
+		// assert(region < maps.size());
 
 		dump_region(maps[region].start, maps[region].end, outdir, kPid);
 	} else {
