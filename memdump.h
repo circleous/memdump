@@ -1,55 +1,47 @@
 #ifndef MAPS_H_
 #define MAPS_H_
 
-#include <regex>
-#include <string>
+#include <algorithm>
+#include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
+
+// #include <cassert>
+#include <cstdio>
+#include <cstring>
+
+#include <unistd.h>
+#include <sys/ptrace.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 struct maps_lines
 {
-	bool valid;
+	std::string range;
 	uintptr_t start;
 	uintptr_t end;
 	std::string permissions;
 	uintptr_t offset;
 	std::string device;
 	uintptr_t inode;
-	std::string pathname;
+	std::string path;
 
 	maps_lines(std::string line)
 	{
-		std::regex re("^([^\\s-]+)-([^\\s]+)\\s([^\\s]+)\\s([^\\s]+)\\s([^\\s]+)\\s([^\\s]+)\\s*(.*)$");
-		std::smatch sm;
-
-		std::regex_match(line, sm, re);
-
-		if (sm.size() != 8) {
-			valid = false;
-			return;
-		}
-
-		//assign each part to a member variable
-		start = std::stoull(sm[1],NULL, 16);
-		end = std::stoull(sm[2], NULL, 16);
-		permissions = sm[3];
-		offset = std::stoull(sm[4], NULL, 16);
-		device = sm[5];
-		inode = std::stoull(sm[6], NULL, 10);
-		pathname = sm[7];
-		valid = true;
+		std::stringstream lines(line);
+		lines >> range >> permissions >> offset >> device >> inode >> path;
+		
+		// split range
+		std::size_t delim = range.find('-');
+		end = std::strtoul(range.substr(delim + 1).c_str(), NULL, 16);
+		start = std::strtoul(range.substr(0, delim).c_str(), NULL, 16);
 	}
 
 	std::string str()
 	{
-		std::stringstream ss;
-		ss << std::hex << start << "-" << end << " " 
-			<< permissions << " "
-			<< offset << " "
-			<< device << " "
-			<< std::dec << inode << " "
-			<< pathname;
-		return ss.str();
+		return std::to_string(start) + "-" + std::to_string(end) + " " + 
+		                   permissions + " " + path;
 	}
 };
 

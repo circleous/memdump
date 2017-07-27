@@ -1,17 +1,3 @@
-#include <fstream>
-#include <string>
-#include <vector>
-
-#include <cassert>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include <unistd.h>
-#include <sys/ptrace.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-
 #include "memdump.h"
 
 void print_usage(const char* kProg)
@@ -22,10 +8,12 @@ void print_usage(const char* kProg)
 	fprintf(stderr, "\t-d <outdir>: Output directory for dump files.\n");
 }
 
-void dump_region(const uintptr_t start, const uintptr_t end, const std::string &outdir, const int pid)
+void dump_region(const uintptr_t start, const uintptr_t end, const std::string &outdir, const int pid, const bool ismem)
 {
+	const std::string prefix = ismem ? "/mem_" : "/map_";
+	
 	std::stringstream outpath;
-	outpath << outdir << "/dump_" << std::hex << start << "_" << end << ".bin";
+	outpath << std::hex << outdir << prefix << start << "_" << end << ".bin";
 
 	fprintf(stderr, "memdump: Output file %s\n", outpath.str().c_str());
 
@@ -38,7 +26,7 @@ void dump_region(const uintptr_t start, const uintptr_t end, const std::string &
 		fprintf(stderr, "memdump: Error opening output file.\n");
 		exit(3);
 	}
-	
+
 	std::ifstream procmem("/proc/" + std::to_string(pid) + "/mem");
 	if (!procmem) {
 		fprintf(stderr, "memdump: Error opening /proc/%d/mem.\n", pid);
@@ -58,7 +46,7 @@ void dump_region(const uintptr_t start, const uintptr_t end, const std::string &
 void dump_all(const std::vector<maps_lines> &maps, const std::string &outdir, const int pid)
 {
 	for (auto& region : maps) {
-		dump_region(region.start, region.end, outdir, pid);
+		dump_region(region.start, region.end, outdir, pid, region.path.empty());
 	}
 }
 
@@ -74,12 +62,7 @@ void parse_maps(const int pid, std::vector<maps_lines> &maps)
 	std::string line;
 	while (std::getline(proc_maps, line)) {
 		maps_lines parse(line);
-
-		if (!parse.valid)
-			fprintf(stderr, "memdump: Error parsing line in /proc/%d/maps\n", pid);
-
-		if (!parse.inode || parse.valid)
-			maps.push_back(parse);
+		maps.push_back(parse);
 	}
 
 	proc_maps.close();
@@ -104,7 +87,7 @@ int main(int argc, char* argv[])
 
 	std::string outdir = input.getCmdOption("-d");
 	if (outdir.empty())
-		outdir = "./";
+		outdir = '.';
 
 	if (input.cmdOptionExists("--all") || input.cmdOptionExists("-a"))
 		all = true;
@@ -126,7 +109,7 @@ int main(int argc, char* argv[])
 		scanf("%zu", &region);
 		// assert(region < maps.size());
 
-		dump_region(maps[region].start, maps[region].end, outdir, kPid);
+		dump_region(maps[region].start, maps[region].end, outdir, kPid, maps[region].path.empty());
 	} else {
 		dump_all(maps, outdir, kPid);
 	}
