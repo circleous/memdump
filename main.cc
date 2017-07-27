@@ -86,8 +86,14 @@ int main(int argc, char* argv[])
 	bool all = false;
 
 	std::string outdir = input.getCmdOption("-d");
-	if (outdir.empty())
+	if (outdir.empty()) {
 		outdir = '.';
+	} else {
+		if (outdir.back() == '/')
+			outdir.erase(outdir.end() - 1);
+		if (outdir.front() != '/')
+			outdir.insert(0, "./");
+	}
 
 	if (input.cmdOptionExists("--all") || input.cmdOptionExists("-a"))
 		all = true;
