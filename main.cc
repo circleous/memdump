@@ -2,7 +2,7 @@
 
 void print_usage(const char* kProg)
 {
-	fprintf(stderr, "Usage: %sp <pid> [-a/--all] [-d <outdir>] [-h/--help]\n", kProg);
+	fprintf(stderr, "Usage: %s <pid> [-a/--all] [-d <outdir>] [-h/--help]\n", kProg);
 	fprintf(stderr, "\t-h/--help: Print this help.\n");
 	fprintf(stderr, "\t-a/--all: Dump all memory region.\n");
 	fprintf(stderr, "\t-d <outdir>: Output directory for dump files.\n");
